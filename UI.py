@@ -37,3 +37,27 @@ ENEMY_KILLED = pygame.USEREVENT+2       # 적이 죽었을 때 이벤트
 TOWER_BOUGHT = pygame.USEREVENT+3       # 타워 구매 이벤트
 EVENT_STATE_CHANGED = pygame.USEREVENT+4  # 상태 변경 이벤트
 
+# -----------------------------
+# 유틸리티 함수 정의
+# -----------------------------
+def negateCoords(coords):
+    return tuple([-coords[0], -coords[1]])
+
+def adjustCoordsByOffset(coords, offset):
+    return tuple([coords[0]-offset[0], coords[1]-offset[1]])
+
+def posToGridCoords(pos, grid_size):
+    return tuple([pos[0] // grid_size, pos[1] // grid_size])
+
+def gridCoordToPos(grid_coord, grid_size):
+    return tuple([grid_coord[0]*grid_size + grid_size//2, grid_coord[1]*grid_size + grid_size//2])
+
+def getDistance(pos1, pos2):
+    return math.sqrt((pos1[0]-pos2[0])**2 + (pos1[1]-pos2[1])**2)
+
+def getDirection(pos1, pos2):
+    if abs(pos1[0]-pos2[0]) > abs(pos1[1]-pos2[1]):
+        return LEFT if pos1[0] > pos2[0] else RIGHT
+    else:
+        return UP if pos1[1] > pos2[1] else DOWN
+
