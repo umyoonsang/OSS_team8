@@ -99,4 +99,36 @@ class Path(pygame.sprite.Sprite):
     def contains(self, point):
         return any(rect.collidepoint(point) for rect in self.rectangles)
 
+# -----------------------------
+# UI 클래스들 정의
+# -----------------------------
+# Button 클래스: 클릭 가능한 사각형 버튼을 생성하고 렌더링하는 클래스
+class Button(pygame.sprite.Sprite):
+    def __init__(self, rect, text, background_colour, text_colour, text_size):
+        pygame.sprite.Sprite.__init__(self)
+        self.rect = rect
+        self.image = pygame.Surface((self.rect.width, self.rect.height))
+        self.text = text
+        self.__background_colour = background_colour
+        self.text_colour = text_colour
+        self.text_size = text_size
+        self.create_image()
 
+    @property
+    def background_colour(self):
+        return self.__background_colour
+
+    @background_colour.setter
+    def background_colour(self, colour):
+        self.__background_colour = colour
+        self.create_image()
+
+    def contains(self, point):
+        return self.rect.collidepoint(point)
+
+    def create_image(self):
+        self.image.fill(self.background_colour)
+        font = pygame.font.SysFont("Arial", self.text_size)
+        text_surf = font.render(self.text, True, self.text_colour)
+        self.image.blit(text_surf, (self.rect.width // 2 - text_surf.get_width() // 2,
+                                    self.rect.height // 2 - text_surf.get_height() // 2))
