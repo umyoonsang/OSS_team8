@@ -61,3 +61,42 @@ def getDirection(pos1, pos2):
     else:
         return UP if pos1[1] > pos2[1] else DOWN
 
+# -----------------------------
+# 경로 클래스 정의
+# -----------------------------
+# Path 클래스: 게임 내 적이 따라가는 경로를 정의하고 시각화하는 클래스
+class Path(pygame.sprite.Sprite):
+    def __init__(self, colour, waypoints=[], grid_size=50):
+        pygame.sprite.Sprite.__init__(self)
+        highest_x = max([pt[0] for pt in waypoints], default=0)
+        highest_y = max([pt[1] for pt in waypoints], default=0)
+        self.image = pygame.Surface(((highest_x+3)*GRID_SIZE, (highest_y+3)*GRID_SIZE))
+        self.image.fill(BACKGROUND_COLOUR)
+        self.rect = self.image.get_rect()
+        self.colour = colour
+        self.waypoints = waypoints
+        self.grid_size = grid_size
+        self.rectangles = []
+        self.generateRectangles()
+
+    def addToPath(self, coords):
+        self.waypoints.append(coords)
+        self.generateRectangles()
+
+    def generateRectangles(self):
+        self.rectangles = []
+        for i in range(len(self.waypoints)-1):
+            first, second = self.waypoints[i], self.waypoints[i+1]
+            top_left = (min(first[0], second[0]), min(first[1], second[1]))
+            bottom_right = (max(first[0], second[0]), max(first[1], second[1]))
+            rect = pygame.Rect(top_left[0]*self.grid_size,
+                               top_left[1]*self.grid_size,
+                               (bottom_right[0]+1-top_left[0])*self.grid_size,
+                               (bottom_right[1]+1-top_left[1])*self.grid_size)
+            pygame.draw.rect(self.image, self.colour, rect)
+            self.rectangles.append(rect)
+
+    def contains(self, point):
+        return any(rect.collidepoint(point) for rect in self.rectangles)
+
+
