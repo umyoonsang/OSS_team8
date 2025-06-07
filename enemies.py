@@ -22,8 +22,9 @@ class Enemy:
         self.exploding = False
         self.explosion_frames = self.load_explosion_frames()
         self.explosion_index = 0
-        self.explosion_frame_delay = 2  # 프레임 사이 지연
+        self.explosion_frame_delay = 2
         self.explosion_frame_count = 0
+        self.gold_given = False  # 골드 중복 지급 방지
 
     def load_explosion_frames(self):
         # ✅ 250x250 스프라이트 시트를 50x50 크기로 25프레임 자르기

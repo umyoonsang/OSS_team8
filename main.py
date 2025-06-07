@@ -70,14 +70,48 @@ def spawn_enemy(wave_number):
     enemy = Enemy(path[0][0], path[0][1], path, hp=80 + wave_number * 10)
     enemies.append(enemy)
 
+# 골드 관련 변수와 UI
+gold = 400  # 시작 골드
+gold_text = TextDisplay(
+    pygame.Rect(20, 800, 200, 50),
+    f"Gold: {gold}",
+    pygame.Color("gold"),
+    36
+)
+gold_text.create_image()
+
 wave_manager = WaveManager(spawn_enemy)
 waves_started = False
+
+# 게임 상태 변수 추가
+MAX_WAVES = 10  # 총 웨이브 수
+escaped_enemies = 0  # 탈출한 적 수
+MAX_ESCAPED = 2  # 최대 허용 탈출 수
+game_over = False
+
+# 집 이미지 로드
+house_image = pygame.image.load("assets/house.png")
+house_image = pygame.transform.scale(house_image, (60, 60))
+house_pos = (path[-1][0] - 30, path[-1][1] - 30)  # 경로 끝점에 위치
+
+# 게임오버 텍스트
+game_over_text = TextDisplay(
+    pygame.Rect(600, 400, 300, 100),
+    "YOU LOSE",
+    pygame.Color("red"),
+    72
+)
+game_over_text.create_image()
 
 # 메인 루프
 running = True
 while running:
     clock.tick(60)
-    win.fill((200, 200, 200))  # 회색 배경
+    win.fill((200, 200, 200))
+
+    # 골드 텍스트 업데이트
+    gold_text.text = f"Gold: {gold}"
+    gold_text.create_image()
 
     # 경로 그리기
     pygame.draw.lines(win, (255, 0, 0), False, path, TILE_SIZE)
@@ -103,8 +137,10 @@ while running:
                     shop_open = False
             else:
                 tower_class = tower_models[selected_tower_index].__class__
-                if is_valid_tower_position((center_x, center_y)):
+                tower_cost = tower_class.value  # 타워 가격
+                if is_valid_tower_position((center_x, center_y)) and gold >= tower_cost:
                     towers.append(tower_class(center_x, center_y))
+                    gold -= tower_cost  # 타워 설치 시 골드 차감
 
     # 웨이브 시작
     keys = pygame.key.get_pressed()
@@ -112,14 +148,46 @@ while running:
         wave_manager.start_next_wave()
         waves_started = True
 
+    if game_over:
+        # 게임 오버 화면 표시
+        win.blit(game_over_text.image, game_over_text.rect)
+        pygame.display.update()
+        continue
+        
+    # 집 이미지 그리기
+    win.blit(house_image, house_pos)
+    
+    # 웨이브 체크
+    if wave_manager.get_wave_number() > MAX_WAVES and wave_manager.is_wave_cleared() and not enemies:
+        game_over = True
+        game_over_text.text = "YOU WIN!"
+        game_over_text.text_colour = pygame.Color("green")
+        game_over_text.create_image()
+    
+    # 적 업데이트 부분 수정
     if waves_started:
         wave_manager.update()
 
         for enemy in enemies[:]:
             enemy.update()
             enemy.draw(win)
+            
+            # 적이 경로 끝에 도달했는지 체크
+            if enemy.path_index >= len(path) and enemy.alive:
+                escaped_enemies += 1
+                enemies.remove(enemy)
+                wave_manager.enemy_killed()
+                
+                if escaped_enemies >= MAX_ESCAPED:
+                    game_over = True
+                    game_over_text.create_image()
+                continue
 
-            # ✅ 폭발 애니메이션이 끝났으면 제거
+            # 적이 죽었을 때 골드 획득
+            if not enemy.alive and not enemy.gold_given:
+                gold += 25
+                enemy.gold_given = True
+            
             if not enemy.alive and enemy.explosion_index >= len(enemy.explosion_frames):
                 enemies.remove(enemy)
                 wave_manager.enemy_killed()
@@ -138,11 +206,14 @@ while running:
         else:
             bullet.draw(win)
 
-    # UI
+    # UI 렌더링
     win.blit(shop_button.image, shop_button.rect)
     if shop_open:
         shop.render(selected_tower_index)
         win.blit(shop.image, shop.rect)
+    
+    # 골드 UI 렌더링
+    win.blit(gold_text.image, gold_text.rect)
 
     # 마우스 셀 강조
     mouse_pos = pygame.mouse.get_pos()

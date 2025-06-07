@@ -13,13 +13,14 @@ class WaveManager:
         self.spawn_callback = spawn_callback  # 함수를 통해 적 객체를 생성하도록 위임
 
     def start_next_wave(self):
-        self.wave_number += 1
-        self.enemies_to_spawn = 5 + self.wave_number * 2  # wave마다 적 수 증가
-        self.enemies_spawned = 0
-        self.enemies_alive = 0
-        self.last_spawn_time = pygame.time.get_ticks()
-        self.wave_in_progress = True
-        print(f"Wave {self.wave_number} 시작!")
+        if self.wave_number < 10:  # 최대 10웨이브까지만
+            self.wave_number += 1
+            self.enemies_to_spawn = 5 + self.wave_number * 2  # wave마다 적 수 증가
+            self.enemies_spawned = 0
+            self.enemies_alive = 0
+            self.last_spawn_time = pygame.time.get_ticks()
+            self.wave_in_progress = True
+            print(f"Wave {self.wave_number} 시작!")
 
     def update(self):
         current_time = pygame.time.get_ticks()
