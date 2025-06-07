@@ -1,164 +1,93 @@
 import pygame
-import math
 
-# 색상 설정
-FRAME_COLOUR = pygame.Color("BLACK")
-BACKGROUND_COLOUR = pygame.Color("GRAY")
-BUTTON_COLOUR = pygame.Color(66, 235, 244)
-TEXT_COLOUR = pygame.Color("WHITE")
-SHOP_BACKGROUND_COLOUR = pygame.Color(60, 60, 60)
-BUTTON_DISABLED_COLOUR = pygame.Color("RED")
-PATH_COLOUR = pygame.Color("BLUE")
-MOUSE_SELECTOR_COLOUR = pygame.Color("WHITE")
+# 색상 정의
+TEXT_COLOUR = pygame.Color("white")
+TOWER_BORDER = pygame.Color("gray")
+TOWER_SELECTED = pygame.Color("cyan")
 
-GRID_SIZE = 50
-
-# 유틸리티
-def adjustCoordsByOffset(coords, offset):
-    return (coords[0] - offset[0], coords[1] - offset[1])
-
-# ---------------------------
-# Button
-# ---------------------------
-class Button(pygame.sprite.Sprite):
-    def __init__(self, rect, text, background_colour, text_colour, text_size):
-        super().__init__()
+class Button:
+    def __init__(self, rect, text, bg_color, text_color, font_size):
         self.rect = rect
-        self.image = pygame.Surface((rect.width, rect.height))
         self.text = text
-        self.__background_colour = background_colour
-        self.text_colour = text_colour
-        self.text_size = text_size
-        self.create_image()
+        self.bg_color = bg_color
+        self.text_color = text_color
+        self.font_size = font_size
 
-    @property
-    def background_colour(self):
-        return self.__background_colour
-
-    @background_colour.setter
-    def background_colour(self, colour):
-        self.__background_colour = colour
-        self.create_image()
-
-    def contains(self, point):
-        return self.rect.collidepoint(point)
+        # ✅ 안전한 기본 시스템 폰트 사용
+        self.font = pygame.font.Font(None, self.font_size)
+        self.image = None
 
     def create_image(self):
-        self.image.fill(self.background_colour)
-        font = pygame.font.Font(None, self.text_size)
-        text_surf = font.render(self.text, True, self.text_colour)
-        self.image.blit(text_surf, (
-            self.rect.width // 2 - text_surf.get_width() // 2,
-            self.rect.height // 2 - text_surf.get_height() // 2
-        ))
+        # 버튼 배경 Surface
+        self.image = pygame.Surface(self.rect.size)
+        self.image.fill(self.bg_color)
 
-# ---------------------------
-# TextDisplay
-# ---------------------------
-class TextDisplay(pygame.sprite.Sprite):
+        # 텍스트 렌더링
+        text_surface = self.font.render(self.text, True, self.text_color)
+        text_rect = text_surface.get_rect(center=(self.rect.width // 2, self.rect.height // 2))
+        self.image.blit(text_surface, text_rect)
+
+class TextDisplay:
     def __init__(self, rect, text, text_colour, text_size):
-        super().__init__()
         self.rect = rect
-        self.image = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-        self.__text = text
+        self.text = text
         self.text_colour = text_colour
         self.text_size = text_size
-        self.create_image()
 
-    @property
-    def text(self):
-        return self.__text
-
-    @text.setter
-    def text(self, new_text):
-        self.__text = new_text
-        self.create_image()
+        # ✅ 완전 투명 배경이 가능한 Surface 생성
+        self.image = pygame.Surface(rect.size, pygame.SRCALPHA)
 
     def create_image(self):
-        self.image.fill((0, 0, 0, 0))
+        self.image.fill((0, 0, 0, 0))  # 투명한 배경
         font = pygame.font.Font(None, self.text_size)
         text_surf = font.render(self.text, True, self.text_colour)
-        self.image.blit(text_surf, (
-            self.rect.width // 2 - text_surf.get_width() // 2,
-            self.rect.height // 2 - text_surf.get_height() // 2
-        ))
+        text_rect = text_surf.get_rect(center=(self.rect.width // 2, self.rect.height // 2))
+        self.image.blit(text_surf, text_rect)
 
-# ---------------------------
-# ShopButton
-# ---------------------------
-class ShopButton(pygame.sprite.Sprite):
-    def __init__(self, tower_model, pos, text_size, text_colour):
-        super().__init__()
-        self.model = tower_model
-        sprite = pygame.image.load(tower_model.sprite_location).convert_alpha()
-        sprite = pygame.transform.scale(sprite, (50, 50))
-
-        font = pygame.font.Font(None, text_size)
-        text_surf = font.render(tower_model.name, True, text_colour)
-
-        width = sprite.get_width() + text_surf.get_width() + 15
-        height = max(sprite.get_height(), text_surf.get_height()) + 10
-        self.rect = pygame.Rect(pos, (width, height))
-        self.image = pygame.Surface((width, height), pygame.SRCALPHA)
-
-        self.text = tower_model.name
-        self.sprite = sprite
-        self.text_surf = text_surf
-        self.text_colour = text_colour
-        self.text_size = text_size
-
-        self.create_image()
-
-    def create_image(self):
-        self.image.fill((0, 0, 0, 0))
-        self.image.blit(self.sprite, (5, 5))
-        self.image.blit(self.text_surf, (self.sprite.get_width() + 10, 5))
-
-    def contains(self, point):
-        return self.rect.collidepoint(point)
-
-# ---------------------------
-# Shop
-# ---------------------------
 class Shop:
-    def __init__(self, screen, rect, tower_models):
+    def __init__(self, screen, rect, towers):
         self.rect = rect
-        self.image = screen.subsurface(rect)
+        self.towers = towers
+
+        # ✅ 독립적인 Surface 생성 (subsurface ❌)
+        self.image = pygame.Surface(rect.size)
+
+        # 상단 제목 표시
         self.title = TextDisplay(pygame.Rect(20, 10, 300, 50), "Shop", TEXT_COLOUR, 40)
-        self.tower_models = tower_models
+        self.title.create_image()
+
+        # 타워 선택 버튼 생성
         self.buttons = []
+        for i, tower in enumerate(towers):
+            text = tower.__class__.__name__
+            btn = Button(
+                pygame.Rect(20, 70 + i * 80, 200, 60),
+                text,
+                pygame.Color("green"),
+                TEXT_COLOUR,
+                25
+            )
+            btn.create_image()  # ✅ 텍스트 포함된 버튼 이미지 생성
+            self.buttons.append(btn)
 
-        y = 80  # 버튼 시작 위치
-        for tower in tower_models:
-            button = ShopButton(tower, (20, y), 24, TEXT_COLOUR)
-            self.buttons.append(button)
-            y += 70
-
-        # 설명 박스를 TextDisplay로 구성
-        info_x = self.rect.width - 190
-        self.description_rects = [
-            TextDisplay(pygame.Rect(info_x, 80, 180, 30), "", TEXT_COLOUR, 20),
-            TextDisplay(pygame.Rect(info_x, 115, 180, 60), "", TEXT_COLOUR, 18)
-        ]
-
-    def render(self, selected_index):
-        self.image.fill(SHOP_BACKGROUND_COLOUR)
+    def render(self, selected):
+        # 배경 채우기 (검정색)
+        self.image.fill((0, 0, 0))
         self.image.blit(self.title.image, self.title.rect)
 
-        for i, button in enumerate(self.buttons):
-            self.image.blit(button.image, button.rect)
-            if i == selected_index:
-                pygame.draw.rect(self.image, MOUSE_SELECTOR_COLOUR, button.rect, 2)
+        # 버튼들 렌더링
+        for i, btn in enumerate(self.buttons):
+            self.image.blit(btn.image, btn.rect)
 
-        # 선택된 타워 정보 표시
-        self.description_rects[0].text = f"Cost: {self.tower_models[selected_index].value}"
-        self.description_rects[1].text = self.tower_models[selected_index].description
+            # 선택된 버튼은 파란 테두리
+            if i == selected:
+                pygame.draw.rect(self.image, TOWER_SELECTED, btn.rect, 3)
+            else:
+                pygame.draw.rect(self.image, TOWER_BORDER, btn.rect, 2)
 
-        for popup in self.description_rects:
-            self.image.blit(popup.image, popup.rect)
-
-    def button_pressed(self, point):
-        for i, button in enumerate(self.buttons):
-            if button.contains(point):
+    def button_pressed(self, mouse_pos):
+        # 마우스 좌표가 어떤 버튼 안에 있는지 확인
+        for i, btn in enumerate(self.buttons):
+            if btn.rect.collidepoint(mouse_pos):
                 return i
         return -1
