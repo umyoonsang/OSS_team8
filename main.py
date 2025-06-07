@@ -11,13 +11,12 @@ clock = pygame.time.Clock()
 
 # 경로 (적 이동 경로)
 path = [
-    (1 * 50, -1 * 50), (1 * 50, 5 * 50), (4 * 50, 5 * 50), (4 * 50, 1 * 50),
-    (6 * 50, 1 * 50), (6 * 50, 5 * 50), (8 * 50, 5 * 50), (8 * 50, 1 * 50),
-    (17 * 50, 1 * 50), (17 * 50, 5 * 50), (14 * 50, 5 * 50), (14 * 50, 8 * 50),
-    (17 * 50, 8 * 50), (17 * 50, 13 * 50), (12 * 50, 13 * 50), (12 * 50, 8 * 50),
-    (9 * 50, 8 * 50), (9 * 50, 11 * 50), (7 * 50, 11 * 50), (7 * 50, 8 * 50),
-    (5 * 50, 8 * 50), (5 * 50, 11 * 50), (3 * 50, 11 * 50), (3 * 50, 8 * 50),
-    (-1 * 50, 8 * 50)
+    (1 * 60, -1 * 60), (1 * 60, 5 * 60), (4 * 60, 5 * 60), (4 * 60, 1 * 60), (6 * 60, 1 * 60),
+    (6 * 60, 5 * 60), (8 * 60, 5 * 60), (8 * 60, 1 * 60), (17 * 60, 1 * 60), (17 * 60, 5 * 60),
+    (14 * 60, 5 * 60), (14 * 60, 8 * 60), (17 * 60, 8 * 60), (17 * 60, 13 * 60),
+    (12 * 60, 13 * 60), (12 * 60, 8 * 60), (9 * 60, 8 * 60), (9 * 60, 11 * 60),
+    (7 * 60, 11 * 60), (7 * 60, 8 * 60), (5 * 60, 8 * 60), (5 * 60, 11 * 60),
+    (3 * 60, 11 * 60), (3 * 60, 8 * 60), (-1 * 60, 8 * 60)
 ]
 
 # 게임 요소
@@ -34,7 +33,7 @@ tower_models = [
 
 # 상점 관련 변수
 shop_open = False
-shop_button = Button(pygame.Rect(1300, 920, 120, 50), "Shop", pygame.Color("blue"), pygame.Color("white"), 30)
+shop_button = Button(pygame.Rect(1340, 20, 120, 50), "Shop", pygame.Color("blue"), pygame.Color("white"), 30)
 selected_tower_index = 0
 shop = Shop(win, pygame.Rect(1050, 100, 400, 800), tower_models)
 
@@ -45,7 +44,7 @@ def spawn_enemy(wave_number):
 
 # 웨이브 매니저 초기화
 wave_manager = WaveManager(spawn_enemy)
-wave_manager.start_next_wave()
+waves_started = False
 
 # 메인 루프
 running = True
@@ -68,27 +67,29 @@ while running:
                     selected_tower_index = selected
                     shop_open = False
             else:
-                # 상점 닫힌 상태에서 화면 클릭 시 타워 설치
                 tower_class = tower_models[selected_tower_index].__class__
                 towers.append(tower_class(mouse_pos[0], mouse_pos[1]))
 
-    # 웨이브 업데이트
-    wave_manager.update()
+    # 스페이스 키로 웨이브 시작
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_SPACE] and wave_manager.is_wave_cleared() and not enemies:
+        wave_manager.start_next_wave()
+        waves_started = True
 
-    # 적 업데이트 및 그리기
-    for enemy in enemies[:]:
-        enemy.update()
-        enemy.draw(win)
-        if not enemy.alive:
-            enemies.remove(enemy)
-            wave_manager.enemy_killed()
+    # 웨이브 및 유닛 업데이트
+    if waves_started:
+        wave_manager.update()
+        for enemy in enemies[:]:
+            enemy.update()
+            enemy.draw(win)
+            if not enemy.alive:
+                enemies.remove(enemy)
+                wave_manager.enemy_killed()
 
-    # 타워 업데이트
     for tower in towers:
         tower.update(enemies, bullets)
         tower.draw(win)
 
-    # 총알 이동 및 충돌 처리
     for bullet in bullets[:]:
         bullet.move()
         if bullet.hit:
@@ -96,11 +97,6 @@ while running:
             bullets.remove(bullet)
         else:
             bullet.draw(win)
-
-    # 다음 웨이브 시작 (스페이스바)
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE] and wave_manager.is_wave_cleared():
-        wave_manager.start_next_wave()
 
     # Shop 버튼 및 상점 렌더링
     shop_button.create_image()
