@@ -55,3 +55,33 @@ class Bullet:
 
     def draw(self, win):
         pygame.draw.circle(win, (255, 0, 0), (int(self.x), int(self.y)), 5)
+
+
+# 새로운 타워 종류들
+
+class SniperTower(Tower):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.range = 200
+        self.damage = 50
+        self.cooldown = 120
+
+    def draw(self, win):
+        pygame.draw.circle(win, (255, 255, 0), (self.x, self.y), 15)
+        pygame.draw.circle(win, (255, 255, 0), (self.x, self.y), self.range, 1)
+
+class SlowTower(Tower):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.range = 120
+        self.damage = 5
+        self.cooldown = 80
+
+    def shoot(self, target):
+        bullet = super().shoot(target)
+        bullet.slow_effect = True
+        return bullet
+
+    def draw(self, win):
+        pygame.draw.circle(win, (0, 255, 255), (self.x, self.y), 15)
+        pygame.draw.circle(win, (0, 255, 255), (self.x, self.y), self.range, 1)

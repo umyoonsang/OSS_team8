@@ -1,7 +1,7 @@
 import pygame
 from enemies import Enemy
 from tower import Tower, Bullet
-from wave_manager import WaveManager
+from Wave import WaveManager
 
 # 초기화
 pygame.init()
