@@ -6,7 +6,12 @@ from UI import Shop, Button
 
 # 초기화
 pygame.init()
-win = pygame.display.set_mode((1500, 1000))
+
+# 전체화면 설정
+win = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+info = pygame.display.Info()
+screen_width = info.current_w
+screen_height = info.current_h
 clock = pygame.time.Clock()
 
 # 경로 (적 이동 경로)
