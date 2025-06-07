@@ -135,7 +135,7 @@ class Shop:
             y += 70
 
         # 설명 박스를 TextDisplay로 구성
-        info_x = 200
+        info_x = self.rect.width - 190
         self.description_rects = [
             TextDisplay(pygame.Rect(info_x, 80, 180, 30), "", TEXT_COLOUR, 20),
             TextDisplay(pygame.Rect(info_x, 115, 180, 60), "", TEXT_COLOUR, 18)
