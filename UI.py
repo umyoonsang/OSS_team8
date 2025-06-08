@@ -1,9 +1,15 @@
 import pygame
 
-# 색상 정의
+# 색상 상수 정의
 TEXT_COLOUR = pygame.Color("white")
 TOWER_BORDER = pygame.Color("gray")
 TOWER_SELECTED = pygame.Color("cyan")
+
+BUTTON_COLOUR = pygame.Color("darkgreen")
+BUTTON_DISABLED_COLOUR = pygame.Color("darkgray")
+MOUSE_SELECTOR_COLOUR = pygame.Color("yellow")
+PATH_COLOUR = pygame.Color("red")
+FRAME_COLOUR = pygame.Color("dimgray")
 
 class Button:
     def __init__(self, rect, text, bg_color, text_color, font_size):
