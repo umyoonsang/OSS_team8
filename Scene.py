@@ -94,20 +94,70 @@ class GameOver(Scene):
 # Pause 클래스: 일시 정지 화면을 나타내는 씬
 class Pause(Scene):
     def __init__(self, screen_size, screen):
-        self.rect = pygame.Rect(100, 100, screen_size[0]-200, screen_size[1]-200)
+        self.rect = pygame.Rect(0, 0, screen_size[0], screen_size[1])
         self.pause_overlay = screen.subsurface(self.rect)
-        self.pause_message = TextDisplay(pygame.Rect(360, 200, 180, 60), "PAUSED", TEXT_COLOUR, 50)
+
+        # 타이틀, 버튼 생성
+        self.pause_message = TextDisplay(pygame.Rect(600, 200, 300, 100), "PAUSED", TEXT_COLOUR, 72)
         self.pause_message.create_image()
-        self.resume_button = Button(pygame.Rect(200, 340, 225, 75), "Resume", BUTTON_COLOUR, TEXT_COLOUR, 50)
+        self.resume_button = Button(pygame.Rect(500, 400, 200, 80), "Resume", BUTTON_COLOUR, TEXT_COLOUR, 50)
+        self.quit_button = Button(pygame.Rect(800, 400, 200, 80), "Main Menu", BUTTON_COLOUR, TEXT_COLOUR, 50)
         self.resume_button.create_image()
-        self.quit_button = Button(pygame.Rect(475, 340, 225, 75), "Main Menu", BUTTON_COLOUR, TEXT_COLOUR, 50)
         self.quit_button.create_image()
 
     def render(self, **kwargs):
-        kwargs["SCENE_GAME"].render(screen=kwargs["screen"], current_state=kwargs["current_state"])
+        self.pause_overlay.fill((30, 30, 30))
         self.pause_overlay.blit(self.pause_message.image, self.pause_message.rect)
         self.pause_overlay.blit(self.resume_button.image, self.resume_button.rect)
         self.pause_overlay.blit(self.quit_button.image, self.quit_button.rect)
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            if self.resume_button.rect.collidepoint(pos):
+                return "resume"
+            elif self.quit_button.rect.collidepoint(pos):
+                return "menu"
+        return None
+
+# 게임 클리어 화면 클래스
+class ClearScene:
+    def __init__(self, screen_size, screen):
+        self.screen = screen
+        self.width, self.height = screen_size
+        self.font = pygame.font.Font(None, 80)  # 큰 글씨 폰트
+        self.button_font = pygame.font.Font(None, 50)  # 버튼용 폰트
+
+        # 클리어 메시지
+        self.message = self.font.render("🎉 GAME CLEARED! 🎉", True, (255, 255, 0))
+        self.message_rect = self.message.get_rect(center=(self.width // 2, self.height // 3))
+
+        # 메인 메뉴로 돌아가기 버튼
+        self.menu_button = Button(pygame.Rect(self.width // 2 - 150, self.height // 2, 300, 60), 
+                                  "Main Menu", pygame.Color("green"), pygame.Color("white"), 36)
+        self.menu_button.create_image()
+
+        # 게임 종료 버튼
+        self.quit_button = Button(pygame.Rect(self.width // 2 - 150, self.height // 2 + 100, 300, 60), 
+                                  "Quit Game", pygame.Color("red"), pygame.Color("white"), 36)
+        self.quit_button.create_image()
+
+    # 클리어 화면 렌더링
+    def render(self):
+        self.screen.fill((0, 0, 50))  # 진한 파랑 배경
+        self.screen.blit(self.message, self.message_rect)
+        self.screen.blit(self.menu_button.image, self.menu_button.rect)
+        self.screen.blit(self.quit_button.image, self.quit_button.rect)
+
+    # 클릭 이벤트 처리
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            pos = pygame.mouse.get_pos()
+            if self.menu_button.rect.collidepoint(pos):
+                return "menu"
+            elif self.quit_button.rect.collidepoint(pos):
+                return "quit"
+        return None
 
 # Game 클래스: 실제 게임이 진행되는 주요 씬
 class Game(Scene):
