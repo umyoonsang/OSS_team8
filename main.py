@@ -81,6 +81,7 @@ game_state = "menu"  # 상태: menu, playing, paused, gameover
 menu_scene = MainMenu(screen_size, win)
 pause_scene = Pause(screen_size, win)
 gameover_scene = GameOver(screen_size, win)
+clear_scene = ClearScene(screen_size, win)
 
 # 게임 구성 요소 초기화
 reset_game()
@@ -125,12 +126,18 @@ while running:
                 running = False
             result = pause_scene.handle_event(event)
             if result == "resume":
+                pygame.event.clear()  # Pause 이후 남은 키 이벤트 제거 (버그 방지)
                 game_state = "playing"
+                break  # resume 누르면 반복문 탈출
             elif result == "menu":
                 game_state = "menu"
-        pause_scene.render(screen=win, current_state="paused", SCENE_GAME=None)
-        pygame.display.update()
-        continue
+                break
+
+        # 여전히 일시정지 상태라면 pause 화면을 렌더링하고 루프 스킵
+        if game_state == "paused":
+            pause_scene.render(screen=win, current_state="paused", SCENE_GAME=None)
+            pygame.display.update()
+            continue
 
     # 게임 오버 처리
     elif game_state == "gameover":
@@ -147,12 +154,32 @@ while running:
         pygame.display.update()
         continue
 
+    #게임 클리어    
+    elif game_state == "clear":
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            result = clear_scene.handle_event(event)
+            if result == "menu":
+                game_state = "menu"
+            elif result == "quit":
+                running = False
+        clear_scene.render()
+        pygame.display.update()
+        continue
+
     # 플레이 중일 때 처리
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-            game_state = "paused"  # 일시정지 전환
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_p:
+                game_state = "paused"  # 일시정지 전환
+            elif event.key == pygame.K_SPACE:
+                # 웨이브 시작은 KEYDOWN 이벤트로 처리
+                if wave_manager.is_wave_cleared() and not enemies:
+                    wave_manager.start_next_wave()
+                    waves_started = True
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             tile_x = mouse_pos[0] // TILE_SIZE
@@ -174,12 +201,6 @@ while running:
                 if is_valid_tower_position((center_x, center_y)) and gold >= tower_cost:
                     towers.append(tower_class(center_x, center_y))
                     gold -= tower_cost
-
-    # 웨이브 시작
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_SPACE] and wave_manager.is_wave_cleared() and not enemies:
-        wave_manager.start_next_wave()
-        waves_started = True
 
 
     # 배경 그리기 및 경로 출력
@@ -212,6 +233,7 @@ while running:
                 enemies.remove(enemy)
                 wave_manager.enemy_killed()
 
+
     # 타워 및 총알 처리
     for tower in towers:
         tower.update(enemies, bullets)
@@ -230,10 +252,14 @@ while running:
     gold_text.text = f"Gold: {gold}"
     gold_text.create_image()
     win.blit(gold_text.image, gold_text.rect)
-    wave_text = font.render(f"Wave: {wave_manager.get_wave_number()}", True, (255, 255, 255))
+    wave_text = font.render(f"Wave: {wave_manager.get_wave_number()} / {MAX_WAVES}", True, (255, 255, 255))
     lives_text = font.render(f"Lives: {MAX_ESCAPED - escaped_enemies} / {MAX_ESCAPED}", True, (255, 100, 100))
     win.blit(wave_text, (220, 800))
     win.blit(lives_text, (400, 800))
+
+        # ✅ 클리어 조건 검사 위치 (여기 이동!)
+    if wave_manager.get_wave_number() == MAX_WAVES and wave_manager.is_wave_cleared() and not enemies:
+        game_state = "clear"
 
     # 상점 버튼 및 상점 열기
 
